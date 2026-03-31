@@ -1,0 +1,11 @@
+Place your trained .h5 model files here.
+
+Expected filenames (in priority order):
+  skin_disease_model_transfer_best.h5   ← best checkpoint from transfer learning
+  skin_disease_model_transfer.h5        ← final transfer learning model
+  skin_disease_model_best.h5            ← best checkpoint from scratch training
+  skin_disease_model.h5                 ← final scratch model
+
+Train a model by running:
+  cd ../
+  python train_model.py

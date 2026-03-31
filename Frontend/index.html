@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DermaScan — AI Skin Disease Detection</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%235B21B6'/><text y='.9em' font-size='70' x='12'>🔬</text></svg>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLzsA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="/app/style.css" />
+</head>
+<body>
+
+  <!-- CANVAS BACKGROUND -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- ── HEADER ── -->
+  <header id="site-header">
+    <div class="header-inner">
+      <a href="#home" class="logo">
+        <span class="logo-icon">🔬</span>
+        <span>Derma<em>Scan</em></span>
+      </a>
+      <nav class="main-nav" id="main-nav">
+        <a href="#home" class="nav-link active">Home</a>
+        <a href="#about" class="nav-link">About</a>
+        <a href="#diseases" class="nav-link">Skin Types</a>
+        <a href="#scanner" class="nav-link">Scanner</a>
+        <a href="#team" class="nav-link">Team</a>
+        <a href="#contact" class="nav-link">Contact</a>
+      </nav>
+      <button class="scan-cta-btn" onclick="document.getElementById('scanner').scrollIntoView({behavior:'smooth'})">
+        <i class="fas fa-search"></i> Scan Now
+      </button>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── HERO ── -->
+  <section id="home" class="hero">
+    <div class="hero-content">
+      <div class="hero-badge"><i class="fas fa-shield-alt"></i> AI-Powered Dermatology</div>
+      <h1 class="hero-title">
+        Your skin tells<br/>
+        <em>a story.</em><br/>
+        <span class="hero-title-accent">We help you read it.</span>
+      </h1>
+      <p class="hero-subtitle">
+        Upload a photo of your skin condition and receive instant AI-powered analysis, 
+        care tips, and guidance — in seconds.
+      </p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="document.getElementById('scanner').scrollIntoView({behavior:'smooth'})">
+          <i class="fas fa-camera"></i> Analyze My Skin
+        </button>
+        <a href="#about" class="btn-ghost">Learn More <i class="fas fa-arrow-right"></i></a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">7</span><span class="stat-label">Conditions Detected</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">90%+</span><span class="stat-label">Model Accuracy</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">&lt;3s</span><span class="stat-label">Analysis Time</span></div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-orb orb-1"></div>
+      <div class="hero-orb orb-2"></div>
+      <div class="hero-card-float card-f1">
+        <i class="fas fa-check-circle"></i>
+        <span>Melanoma Detected — 94.2% confidence</span>
+      </div>
+      <div class="hero-card-float card-f2">
+        <i class="fas fa-heartbeat"></i>
+        <span>See a doctor urgently</span>
+      </div>
+      <div class="skin-ring">
+        <div class="skin-inner">
+          <i class="fas fa-dna"></i>
+          <p>Deep Learning<br/>Analysis</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ABOUT ── -->
+  <section id="about" class="about">
+    <div class="section-wrap">
+      <div class="about-text">
+        <p class="section-label">What We Do</p>
+        <h2 class="section-title">Bridging AI<br/>& Dermatology</h2>
+        <p class="body-text">
+          Skin diseases affect <strong>1 in 3 people</strong> globally, yet dermatological expertise 
+          remains concentrated in urban centres. DermaScan uses Convolutional Neural Networks trained 
+          on the <em>HAM10000</em> dataset to classify skin lesions from a single photo — putting 
+          expert-level screening in everyone's pocket.
+        </p>
+        <ul class="feature-list">
+          <li><i class="fas fa-bolt"></i> Real-time image classification using CNN</li>
+          <li><i class="fas fa-lock"></i> Images processed locally — never stored</li>
+          <li><i class="fas fa-map-marker-alt"></i> Designed for underserved &amp; remote areas</li>
+          <li><i class="fas fa-user-md"></i> Always recommends professional follow-up</li>
+        </ul>
+      </div>
+      <div class="about-cards">
+        <div class="about-card card-teal">
+          <i class="fas fa-brain"></i>
+          <h4>MobileNetV2 CNN</h4>
+          <p>Transfer-learned model fine-tuned on 10,000+ dermatoscopic images</p>
+        </div>
+        <div class="about-card card-rose">
+          <i class="fas fa-flask"></i>
+          <h4>HAM10000 Dataset</h4>
+          <p>7 classes, clinically validated, used by researchers worldwide</p>
+        </div>
+        <div class="about-card card-amber">
+          <i class="fas fa-chart-line"></i>
+          <h4>Confidence Scores</h4>
+          <p>Top predictions with probability scores for transparent diagnosis</p>
+        </div>
+        <div class="about-card card-purple">
+          <i class="fas fa-mobile-alt"></i>
+          <h4>Web-First Design</h4>
+          <p>No app install needed — works on any device with a browser</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SKIN TYPES & DISEASES ── -->
+  <section id="diseases" class="diseases">
+    <div class="section-wrap">
+      <div class="section-header">
+        <p class="section-label">Knowledge Base</p>
+        <h2 class="section-title">Skin Types &amp; Conditions</h2>
+        <p class="section-desc">Understanding your skin is the first step to protecting it.</p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="types">Skin Types</button>
+        <button class="tab-btn" data-tab="diseases">Diseases Detected</button>
+      </div>
+
+      <!-- Skin Types Grid -->
+      <div class="tab-panel active" id="tab-types">
+        <div class="skin-grid">
+          <div class="skin-card">
+            <div class="skin-icon" style="background:linear-gradient(135deg,#FED7AA,#FB923C)"><i class="fa-solid fa-wind"></i></div>
+            <h3>Dry Skin</h3>
+            <p>Feels tight, rough and flaky. Use gentle cleansers and heavy moisturisers. Avoid hot showers.</p>
+            <div class="skin-tags"><span>Flaky</span><span>Tight</span><span>Dull</span></div>
+          </div>
+          <div class="skin-card">
+            <div class="skin-icon" style="background:linear-gradient(135deg,#BBF7D0,#4ADE80)"><i class="fas fa-face-smile"></i></div>
+            <h3>Normal Skin</h3>
+            <p>Well-balanced with small pores and few imperfections. Maintain with mild cleanser and SPF.</p>
+            <div class="skin-tags"><span>Balanced</span><span>Healthy</span></div>
+          </div>
+          <div class="skin-card">
+            <div class="skin-icon" style="background:linear-gradient(135deg,#BFDBFE,#60A5FA)"><i class="fas fa-water"></i></div>
+            <h3>Oily Skin</h3>
+            <p>Excess sebum causes shine and enlarged pores. Use oil-free, non-comedogenic products.</p>
+            <div class="skin-tags"><span>Shiny</span><span>Pores</span><span>Prone</span></div>
+          </div>
+          <div class="skin-card">
+            <div class="skin-icon" style="background:linear-gradient(135deg,#FDE68A,#F59E0B)"><i class="fas fa-shield"></i></div>
+            <h3>Sensitive Skin</h3>
+            <p>Easily irritated by products or weather. Use fragrance-free, hypoallergenic formulas only.</p>
+            <div class="skin-tags"><span>Reactive</span><span>Redness</span></div>
+          </div>
+          <div class="skin-card">
+            <div class="skin-icon" style="background:linear-gradient(135deg,#E9D5FF,#A855F7)"><i class="fas fa-adjust"></i></div>
+            <h3>Combination Skin</h3>
+            <p>Oily T-zone, dry cheeks. Use targeted products for different facial zones.</p>
+            <div class="skin-tags"><span>Mixed</span><span>T-zone</span></div>
+          </div>
+          <div class="skin-card">
+            <div class="skin-icon" style="background:linear-gradient(135deg,#FCE7F3,#EC4899)"><i class="fas fa-fire"></i></div>
+            <h3>Acne-Prone Skin</h3>
+            <p>Prone to breakouts and clogged pores. Cleanse twice daily and use salicylic acid treatments.</p>
+            <div class="skin-tags"><span>Breakouts</span><span>Comedones</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diseases Grid -->
+      <div class="tab-panel" id="tab-diseases">
+        <div class="disease-grid">
+          <div class="disease-card severity-critical">
+            <div class="severity-badge">Critical</div>
+            <div class="disease-icon"><i class="fas fa-radiation"></i></div>
+            <h3>Melanoma</h3>
+            <p>The most dangerous skin cancer. Irregular borders, multiple colours, rapid growth. Requires immediate medical attention.</p>
+            <div class="action-tag urgent"><i class="fas fa-ambulance"></i> See doctor URGENTLY</div>
+          </div>
+          <div class="disease-card severity-high">
+            <div class="severity-badge">High</div>
+            <div class="disease-icon"><i class="fas fa-sun"></i></div>
+            <h3>Actinic Keratosis</h3>
+            <p>Rough scaly patches from UV damage. Pre-cancerous lesions that may progress if untreated.</p>
+            <div class="action-tag warning"><i class="fas fa-user-md"></i> See doctor soon</div>
+          </div>
+          <div class="disease-card severity-high">
+            <div class="severity-badge">High</div>
+            <div class="disease-icon"><i class="fas fa-disease"></i></div>
+            <h3>Basal Cell Carcinoma</h3>
+            <p>Most common skin cancer. Slow-growing, rarely metastasises but needs prompt dermatological treatment.</p>
+            <div class="action-tag warning"><i class="fas fa-user-md"></i> See doctor soon</div>
+          </div>
+          <div class="disease-card severity-moderate">
+            <div class="severity-badge">Moderate</div>
+            <div class="disease-icon"><i class="fas fa-circle"></i></div>
+            <h3>Melanocytic Nevus</h3>
+            <p>Common moles. Most are harmless but monitor for ABCDE changes — asymmetry, border, colour, diameter, evolution.</p>
+            <div class="action-tag monitor"><i class="fas fa-eye"></i> Monitor &amp; check-up</div>
+          </div>
+          <div class="disease-card severity-low">
+            <div class="severity-badge">Low</div>
+            <div class="disease-icon"><i class="fas fa-leaf"></i></div>
+            <h3>Benign Keratosis</h3>
+            <p>Harmless age-related growths. Can appear wart-like or scaly. Removal is cosmetic only.</p>
+            <div class="action-tag ok"><i class="fas fa-check"></i> Usually harmless</div>
+          </div>
+          <div class="disease-card severity-low">
+            <div class="severity-badge">Low</div>
+            <div class="disease-icon"><i class="fas fa-dot-circle"></i></div>
+            <h3>Dermatofibroma</h3>
+            <p>Firm benign nodule, often on legs. Dimples inward when pinched. No treatment usually needed.</p>
+            <div class="action-tag ok"><i class="fas fa-check"></i> Benign growth</div>
+          </div>
+          <div class="disease-card severity-low">
+            <div class="severity-badge">Low</div>
+            <div class="disease-icon"><i class="fas fa-tint"></i></div>
+            <h3>Vascular Lesion</h3>
+            <p>Blood vessel abnormalities. Includes haemangiomas and spider veins. Usually benign, treatable with laser.</p>
+            <div class="action-tag ok"><i class="fas fa-check"></i> Usually benign</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SCANNER ── -->
+  <section id="scanner" class="scanner">
+    <div class="section-wrap scanner-wrap">
+      <div class="scanner-info">
+        <p class="section-label">AI Analysis</p>
+        <h2 class="section-title">Scan Your Skin</h2>
+        <p class="body-text">
+          Upload a clear, well-lit photo of the affected skin area. 
+          Our CNN model will classify it against 7 known conditions and 
+          provide personalised care guidance.
+        </p>
+        <div class="scanner-tips">
+          <h4><i class="fas fa-lightbulb"></i> Tips for best results</h4>
+          <ul>
+            <li><i class="fas fa-sun"></i> Use natural or bright lighting</li>
+            <li><i class="fas fa-search-plus"></i> Focus closely on the affected area</li>
+            <li><i class="fas fa-image"></i> Use PNG or JPG, under 16 MB</li>
+            <li><i class="fas fa-stethoscope"></i> Always consult a doctor for diagnosis</li>
+          </ul>
+        </div>
+        <div class="disclaimer-box">
+          <i class="fas fa-info-circle"></i>
+          <p>This tool is for educational screening only and does <strong>not</strong> replace professional medical diagnosis.</p>
+        </div>
+      </div>
+
+      <div class="scanner-panel">
+        <!-- Upload Area -->
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" id="file-input" accept=".png,.jpg,.jpeg" hidden />
+          <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+          <h3>Drop your image here</h3>
+          <p>or click to browse</p>
+          <button class="btn-primary" id="choose-file-btn">
+            <i class="fas fa-folder-open"></i> Choose File
+          </button>
+        </div>
+
+        <!-- Preview Area (hidden initially) -->
+        <div class="preview-zone" id="preview-zone" style="display:none">
+          <img id="preview-img" alt="Selected skin image" />
+          <div class="preview-info">
+            <span id="file-name-display"></span>
+            <button class="btn-ghost-sm" id="change-file-btn"><i class="fas fa-sync-alt"></i> Change</button>
+          </div>
+          <button class="btn-primary full-width" id="analyze-btn">
+            <i class="fas fa-microscope"></i> Analyze Now
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading-zone" id="loading-zone" style="display:none">
+          <div class="dna-loader">
+            <div class="dna-bar"></div>
+            <div class="dna-bar"></div>
+            <div class="dna-bar"></div>
+            <div class="dna-bar"></div>
+            <div class="dna-bar"></div>
+          </div>
+          <p id="loading-text">Processing image…</p>
+        </div>
+
+        <!-- Results -->
+        <div class="results-zone" id="results-zone" style="display:none"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TEAM ── -->
+  <section id="team" class="team">
+    <div class="section-wrap">
+      <div class="section-header">
+        <p class="section-label">The People</p>
+        <h2 class="section-title">Meet Our Team</h2>
+        <p class="section-desc">Built with passion by students who believe technology can transform healthcare.</p>
+      </div>
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="team-avatar"><i class="fas fa-user-circle"></i></div>
+          <div class="team-info">
+            <h3>Ubika Chaudhary</h3>
+            <span class="team-role">Frontend & UI Design</span>
+            <div class="team-socials">
+              <a href="https://github.com/yubika23" aria-label="GitHub"><i class="fab fa-github"></i></a>
+              <a href="https://www.linkedin.com/in/ubika-chaudhary-4b2688364" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+            </div>
+          </div>
+        </div>
+        <div class="team-card featured">
+          <div class="team-avatar"><i class="fas fa-user-circle"></i></div>
+          <div class="team-info">
+            <h3>Moksha</h3>
+            <span class="team-role">ML Engineering</span>
+            <div class="team-socials">
+              <a href="https://github.com/Mokshaaaaaa" aria-label="GitHub"><i class="fab fa-github"></i></a>
+              <a href="https://www.linkedin.com/in/moksha7" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CONTACT ── -->
+  <section id="contact" class="contact">
+    <div class="section-wrap contact-wrap">
+      <div class="contact-info">
+        <p class="section-label">Get In Touch</p>
+        <h2 class="section-title">Contact Us</h2>
+        <p class="body-text">Have feedback, questions, or want to collaborate? We'd love to hear from you.</p>
+        <div class="contact-details">
+          <a href="tel:+918168941896" class="contact-item">
+            <i class="fas fa-phone"></i><span>+91 81689 41896</span>
+          </a>
+          <a href="mailto:yubikachaudhary@gmail.com" class="contact-item">
+            <i class="fas fa-envelope"></i><span>yubikachaudhary@gmail.com</span>
+          </a>
+          <div class="contact-item">
+            <i class="fas fa-map-marker-alt"></i><span>MMDU, Mullana, Ambala, Haryana</span>
+          </div>
+        </div>
+      </div>
+      <div class="contact-form-wrap">
+        <form class="contact-form" id="contact-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Name</label>
+              <input type="text" placeholder="Your name" required />
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" placeholder="your@email.com" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" placeholder="+91 XXXXX XXXXX" />
+          </div>
+          <div class="form-group">
+            <label>Message</label>
+            <textarea rows="5" placeholder="Tell us what's on your mind…" required></textarea>
+          </div>
+          <button type="submit" class="btn-primary full-width">
+            <i class="fas fa-paper-plane"></i> Send Message
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="#home" class="logo"><span class="logo-icon">🔬</span></i></span><span>Derma<em>Scan</em></span></a>
+        <p>AI-powered skin disease detection for everyone, everywhere.</p>
+      </div>
+      <div class="footer-links">
+        <h4>Navigate</h4>
+        <a href="#home">Home</a>
+        <a href="#about">About</a>
+        <a href="#diseases">Skin Types</a>
+        <a href="#scanner">Scanner</a>
+        <a href="#team">Team</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <div class="footer-links">
+        <h4>Connect</h4>
+        <a href="https://www.linkedin.com/in/ubika-chaudhary-4b2688364">LinkedIn</a>
+        <a href="https://github.com/Mokshaaaaaa">GitHub</a>
+      </div>
+      <div class="footer-links">
+        <h4>Legal</h4>
+        <a href="/app/privacy.html">Privacy Policy</a>
+        <a href="/app/disclaimer.html">Disclaimer</a>
+        <a href="/app/terms.html">Terms of Use</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 DermaScan. Built with ♥ by Ubika, Moksha at MMDU.</p>
+      <p class="footer-note">⚠️ For educational use only. Not a substitute for medical advice.</p>
+    </div>
+  </footer>
+
+  <script src="/app/main.js" defer></script>
+</body>
+</html>
