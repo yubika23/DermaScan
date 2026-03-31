@@ -9,6 +9,8 @@ from flask_cors import CORS
 from PIL import Image
 import numpy as np
 import io, os, random, logging, json, smtplib
+from dotenv import load_dotenv
+load_dotenv()
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -28,7 +30,7 @@ MESSAGES_FILE  = 'messages.json'
 #   2. Then go to myaccount.google.com → Security → App Passwords
 #   3. Create one for "Mail" → copy the 16-character password here
 SENDER_EMAIL    = 'immoksha7@gmail.com'         # ← Gmail you send FROM
-SENDER_PASSWORD = 'lrjq kueh wibf wwms'        # ← 16-char Gmail App Password (replace this!)
+SENDER_PASSWORD = os.environ.get('SENDER_PASSWORD', '')        # ← 16-char Gmail App Password (replace this!)
 RECIPIENT_EMAILS = [
     'immoksha7@gmail.com',
     'yubikachaudhary@gmail.com',
