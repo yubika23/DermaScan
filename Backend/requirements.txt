@@ -6,7 +6,7 @@ Werkzeug>=3.0.0
 # ── Machine Learning ──────────────────────────────────
 # Use tensorflow-cpu if you don't have a GPU:
 #   pip install tensorflow-cpu
-tensorflow-cpu==2.13.0
+tensorflow-cpu>=2.15.0
 numpy>=1.26.0
 
 # ── Image Processing ──────────────────────────────────
