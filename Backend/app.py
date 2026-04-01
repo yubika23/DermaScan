@@ -24,13 +24,8 @@ ALLOWED_EXT    = {'png', 'jpg', 'jpeg'}
 MESSAGES_FILE  = 'messages.json'
 
 # ─── EMAIL CONFIG ──────────────────────────────────────
-# Fill these in with your Gmail credentials.
-# Use a Gmail App Password (NOT your real password):
-#   1. Go to myaccount.google.com → Security → 2-Step Verification → ON
-#   2. Then go to myaccount.google.com → Security → App Passwords
-#   3. Create one for "Mail" → copy the 16-character password here
-SENDER_EMAIL    = 'immoksha7@gmail.com'         # ← Gmail you send FROM
-SENDER_PASSWORD = os.environ.get('SENDER_PASSWORD', '')        # ← 16-char Gmail App Password (replace this!)
+SENDER_EMAIL     = 'immoksha7@gmail.com'
+SENDER_PASSWORD  = os.environ.get('SENDER_PASSWORD', '')
 RECIPIENT_EMAILS = [
     'immoksha7@gmail.com',
     'yubikachaudhary@gmail.com',
@@ -56,7 +51,7 @@ CLASS_NAMES = [
 
 # ─── FLASK SETUP ────────────────────────────────────────
 app = Flask(__name__)
-CORS(app, origins="*")
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=False)
 app.config['UPLOAD_FOLDER']      = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -64,17 +59,24 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+# ─── CORS HEADERS ──────────────────────────────────────
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
 # ─── LOAD TENSORFLOW MODEL ─────────────────────────────
-model             = None
+model                = None
 tensorflow_available = False
 
 def load_model():
-    """Try to load TensorFlow and a saved model."""
     global model, tensorflow_available
     try:
         import tensorflow as tf
         from tensorflow import keras
-        tf.get_logger().setLevel('ERROR')    # suppress TF logs
+        tf.get_logger().setLevel('ERROR')
         log.info(f"TensorFlow {tf.__version__} loaded.")
 
         for path in MODEL_PATHS:
@@ -85,8 +87,6 @@ def load_model():
                 log.info("✅ Model loaded successfully!")
                 return
 
-        # No saved model — try building MobileNetV2 as a baseline
-        # (weights only; accuracy will be random until fine-tuned)
         log.warning("No saved model found. Building bare MobileNetV2 (untrained head).")
         base = tf.keras.applications.MobileNetV2(
             input_shape=(IMG_SIZE, IMG_SIZE, 3),
@@ -103,7 +103,7 @@ def load_model():
         out = tf.keras.layers.Dense(len(CLASS_NAMES), activation='softmax')(x)
         model = tf.keras.Model(inputs=base.input, outputs=out)
         tensorflow_available = True
-        log.warning("⚠️  Using untrained head — predictions NOT accurate. Train the model first.")
+        log.warning("⚠️  Using untrained head — predictions NOT accurate.")
 
     except ImportError:
         log.warning("TensorFlow not installed. Running in demo mode.")
@@ -114,29 +114,23 @@ load_model()
 
 # ─── IMAGE PREPROCESSING ───────────────────────────────
 def preprocess_image(file_path: str) -> np.ndarray:
-    """Load, resize, and normalise an image for CNN inference."""
     img = Image.open(file_path).convert('RGB')
     img = img.resize((IMG_SIZE, IMG_SIZE), Image.LANCZOS)
-    arr = np.array(img, dtype=np.float32) / 255.0   # [0,1]
-    return np.expand_dims(arr, 0)                    # (1, H, W, 3)
+    arr = np.array(img, dtype=np.float32) / 255.0
+    return np.expand_dims(arr, 0)
 
 # ─── PREDICTION ────────────────────────────────────────
 def predict_image(file_path: str) -> dict:
-    """Run inference and return structured prediction dict."""
-
     if tensorflow_available and model is not None:
         x     = preprocess_image(file_path)
-        probs = model.predict(x, verbose=0)[0]        # shape (7,)
+        probs = model.predict(x, verbose=0)[0]
         top_idx  = int(np.argmax(probs))
         top_conf = float(probs[top_idx])
-
-        # Top-3 sorted predictions
         ranked = sorted(
             [(CLASS_NAMES[i], float(p)) for i, p in enumerate(probs)],
             key=lambda t: t[1], reverse=True
         )
         top3 = [{'condition': c, 'confidence': round(p, 4)} for c, p in ranked[:3]]
-
         return {
             'prediction': CLASS_NAMES[top_idx],
             'confidence': f"{top_conf * 100:.2f}%",
@@ -144,15 +138,14 @@ def predict_image(file_path: str) -> dict:
             'test_mode': False,
         }
 
-    # ── Demo / fallback ──
-    predicted = random.choice(CLASS_NAMES)
+    predicted  = random.choice(CLASS_NAMES)
     confidence = random.uniform(0.70, 0.95)
-    others = [c for c in CLASS_NAMES if c != predicted]
+    others     = [c for c in CLASS_NAMES if c != predicted]
     random.shuffle(others)
     top3 = [
-        {'condition': predicted,   'confidence': round(confidence, 4)},
-        {'condition': others[0],   'confidence': round(random.uniform(0.03, 0.18), 4)},
-        {'condition': others[1],   'confidence': round(random.uniform(0.01, 0.08), 4)},
+        {'condition': predicted, 'confidence': round(confidence, 4)},
+        {'condition': others[0], 'confidence': round(random.uniform(0.03, 0.18), 4)},
+        {'condition': others[1], 'confidence': round(random.uniform(0.01, 0.08), 4)},
     ]
     return {
         'prediction': predicted,
@@ -254,9 +247,7 @@ def validate_image(path: str) -> bool:
         return False
 
 # ─── CONTACT HELPERS ───────────────────────────────────
-
 def save_message(data: dict) -> bool:
-    """Append a contact message to messages.json."""
     try:
         messages = []
         if os.path.exists(MESSAGES_FILE):
@@ -271,9 +262,7 @@ def save_message(data: dict) -> bool:
         log.error(f"Failed to save message: {e}")
         return False
 
-
 def send_email(data: dict) -> bool:
-    """Send contact form submission to both recipient emails via Gmail SMTP."""
     try:
         subject = f"📬 DermaScan Contact — {data['name']}"
         body = f"""
@@ -293,9 +282,9 @@ Reply directly to: {data['email']}
         """.strip()
 
         msg = MIMEMultipart()
-        msg['From']    = SENDER_EMAIL
-        msg['To']      = ', '.join(RECIPIENT_EMAILS)
-        msg['Subject'] = subject
+        msg['From']     = SENDER_EMAIL
+        msg['To']       = ', '.join(RECIPIENT_EMAILS)
+        msg['Subject']  = subject
         msg['Reply-To'] = data['email']
         msg.attach(MIMEText(body, 'plain'))
 
@@ -308,7 +297,6 @@ Reply directly to: {data['email']}
     except Exception as e:
         log.error(f"Failed to send email: {e}")
         return False
-
 
 # ─── ROUTES ────────────────────────────────────────────
 @app.route('/app')
@@ -330,40 +318,31 @@ def home():
         'classes': CLASS_NAMES,
     })
 
-@app.route('/api/predict', methods=['POST'])
+@app.route('/api/predict', methods=['POST', 'OPTIONS'])
 def predict():
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
     filepath = None
     try:
         if 'file' not in request.files:
             return jsonify({'error': 'No file provided'}), 400
-
         file = request.files['file']
         if not file or file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
         if not allowed_file(file.filename):
             return jsonify({'error': 'Invalid file type. Use PNG, JPG, or JPEG.'}), 400
-
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
-
         if not validate_image(filepath):
             return jsonify({'error': 'The uploaded file is not a valid image.'}), 400
-
         result = predict_image(filepath)
         rec    = RECOMMENDATIONS.get(result['prediction'], DEFAULT_REC)
-
-        response = {
-            'success': True,
-            **result,
-            'recommendations': rec,
-        }
+        response = {'success': True, **result, 'recommendations': rec}
         return jsonify(response), 200
-
     except Exception as e:
         log.error(f"Prediction error: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
-
     finally:
         if filepath and os.path.exists(filepath):
             try:
@@ -387,23 +366,20 @@ def health():
         'model': model is not None,
     })
 
-
-@app.route('/api/contact', methods=['POST'])
+@app.route('/api/contact', methods=['POST', 'OPTIONS'])
 def contact():
-    """Receive contact form, save to file and send email."""
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
     try:
         body = request.get_json()
         if not body:
             return jsonify({'error': 'No data provided'}), 400
-
         name    = (body.get('name')    or '').strip()
         email   = (body.get('email')   or '').strip()
         phone   = (body.get('phone')   or '').strip()
         message = (body.get('message') or '').strip()
-
         if not name or not email or not message:
             return jsonify({'error': 'Name, email and message are required.'}), 400
-
         data = {
             'name':      name,
             'email':     email,
@@ -411,28 +387,22 @@ def contact():
             'message':   message,
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         }
-
-        saved  = save_message(data)
+        saved   = save_message(data)
         emailed = send_email(data)
-
         if not saved and not emailed:
             return jsonify({'error': 'Failed to process your message. Please try again.'}), 500
-
         return jsonify({
             'success': True,
             'saved':   saved,
             'emailed': emailed,
-            'message': 'Your message has been received! We\'ll get back to you soon.',
+            'message': "Your message has been received! We'll get back to you soon.",
         }), 200
-
     except Exception as e:
         log.error(f"Contact error: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
-
 @app.route('/api/messages', methods=['GET'])
 def get_messages():
-    """Return all saved contact messages (for internal use)."""
     try:
         if not os.path.exists(MESSAGES_FILE):
             return jsonify({'messages': [], 'count': 0}), 200
@@ -457,9 +427,6 @@ if __name__ == '__main__':
         print('✅  TensorFlow loaded — real predictions enabled!')
     else:
         print('⚠️   TensorFlow not available — running in DEMO mode.')
-        print('     Install TensorFlow and train a model to enable real predictions.')
-        print('     Run:  pip install tensorflow')
-        print('     Then: python train_model.py')
     print('='*60)
     print('🌐  Starting DermaScan API on http://localhost:5000\n')
     app.run(debug=True, host='0.0.0.0', port=5000)
