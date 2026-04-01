@@ -19,7 +19,7 @@ from werkzeug.utils import secure_filename
 # ─── CONFIG ────────────────────────────────────────────
 IMG_SIZE       = 224
 UPLOAD_FOLDER  = 'uploads'
-MAX_FILE_SIZE  = 16 * 1024 * 1024   # 16 MB
+MAX_FILE_SIZE  = 16 * 1024 * 1024
 ALLOWED_EXT    = {'png', 'jpg', 'jpeg'}
 MESSAGES_FILE  = 'messages.json'
 
@@ -31,7 +31,6 @@ RECIPIENT_EMAILS = [
     'yubikachaudhary@gmail.com',
 ]
 
-# Paths to look for a saved model (priority order)
 MODEL_PATHS = [
     'models/skin_disease_model_transfer_best.h5',
     'models/skin_disease_model_transfer.h5',
@@ -51,7 +50,7 @@ CLASS_NAMES = [
 
 # ─── FLASK SETUP ────────────────────────────────────────
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=False)
+CORS(app)
 app.config['UPLOAD_FOLDER']      = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -62,9 +61,11 @@ log = logging.getLogger(__name__)
 # ─── CORS HEADERS ──────────────────────────────────────
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    origin = request.headers.get('Origin', '*')
+    response.headers['Access-Control-Allow-Origin'] = origin
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Max-Age'] = '86400'
     return response
 
 # ─── LOAD TENSORFLOW MODEL ─────────────────────────────
@@ -264,7 +265,7 @@ def save_message(data: dict) -> bool:
 
 def send_email(data: dict) -> bool:
     try:
-        subject = f"📬 DermaScan Contact — {data['name']}"
+        subject = f"DermaScan Contact — {data['name']}"
         body = f"""
 New contact form submission on DermaScan
 ─────────────────────────────────────────
