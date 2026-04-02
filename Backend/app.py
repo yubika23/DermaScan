@@ -8,7 +8,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from PIL import Image
 import numpy as np
-import io, os, random, logging, json, smtplib
+import io, os, random, logging, json, smtplib, threading
 from dotenv import load_dotenv
 load_dotenv()
 from datetime import datetime
@@ -375,12 +375,15 @@ def contact():
         body = request.get_json()
         if not body:
             return jsonify({'error': 'No data provided'}), 400
+
         name    = (body.get('name')    or '').strip()
         email   = (body.get('email')   or '').strip()
         phone   = (body.get('phone')   or '').strip()
         message = (body.get('message') or '').strip()
+
         if not name or not email or not message:
             return jsonify({'error': 'Name, email and message are required.'}), 400
+
         data = {
             'name':      name,
             'email':     email,
@@ -388,16 +391,36 @@ def contact():
             'message':   message,
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         }
-        saved   = save_message(data)
-        emailed = send_email(data)
-        if not saved and not emailed:
+
+        # ── Save message first — this MUST succeed ──
+        saved = save_message(data)
+        if not saved:
             return jsonify({'error': 'Failed to process your message. Please try again.'}), 500
+
+        # ── Try email with threading timeout (Railway-safe) ──
+        emailed = False
+        try:
+            result = [False]
+
+            def run_email():
+                result[0] = send_email(data)
+
+            email_thread = threading.Thread(target=run_email)
+            email_thread.daemon = True
+            email_thread.start()
+            email_thread.join(timeout=8)
+            emailed = result[0]
+        except Exception as e:
+            log.warning(f"Email skipped: {e}")
+            emailed = False
+
         return jsonify({
             'success': True,
             'saved':   saved,
             'emailed': emailed,
             'message': "Your message has been received! We'll get back to you soon.",
         }), 200
+
     except Exception as e:
         log.error(f"Contact error: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
@@ -423,11 +446,12 @@ def not_found(e):
 
 # ─── ENTRY POINT ───────────────────────────────────────
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
     print('\n' + '='*60)
     if tensorflow_available and model is not None:
         print('✅  TensorFlow loaded — real predictions enabled!')
     else:
         print('⚠️   TensorFlow not available — running in DEMO mode.')
     print('='*60)
-    print('🌐  Starting DermaScan API on http://localhost:5000\n')
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    print(f'🌐  Starting DermaScan API on http://0.0.0.0:{port}\n')
+    app.run(debug=False, host='0.0.0.0', port=port)
