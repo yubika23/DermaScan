@@ -22,3 +22,5 @@ gunicorn>=21.2.0
 python-dotenv>=1.0.0
 
 gdown>=4.7.1
+
+resend>=0.7.0

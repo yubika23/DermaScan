@@ -8,12 +8,10 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from PIL import Image
 import numpy as np
-import io, os, random, logging, json, smtplib, threading
+import os, random, logging, threading
 from dotenv import load_dotenv
 load_dotenv()
 from datetime import datetime
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from werkzeug.utils import secure_filename
 
 # ─── CONFIG ────────────────────────────────────────────
@@ -21,11 +19,8 @@ IMG_SIZE       = 224
 UPLOAD_FOLDER  = 'uploads'
 MAX_FILE_SIZE  = 16 * 1024 * 1024
 ALLOWED_EXT    = {'png', 'jpg', 'jpeg'}
-MESSAGES_FILE  = 'messages.json'
 
 # ─── EMAIL CONFIG ──────────────────────────────────────
-SENDER_EMAIL     = 'immoksha7@gmail.com'
-SENDER_PASSWORD  = os.environ.get('SENDER_PASSWORD', '')
 RECIPIENT_EMAILS = [
     'immoksha7@gmail.com',
     'yubikachaudhary@gmail.com',
@@ -247,26 +242,21 @@ def validate_image(path: str) -> bool:
     except Exception:
         return False
 
-# ─── CONTACT HELPERS ───────────────────────────────────
-def save_message(data: dict) -> bool:
-    try:
-        messages = []
-        if os.path.exists(MESSAGES_FILE):
-            with open(MESSAGES_FILE, 'r', encoding='utf-8') as f:
-                messages = json.load(f)
-        messages.append(data)
-        with open(MESSAGES_FILE, 'w', encoding='utf-8') as f:
-            json.dump(messages, f, indent=2, ensure_ascii=False)
-        log.info(f"Message saved — total messages: {len(messages)}")
-        return True
-    except Exception as e:
-        log.error(f"Failed to save message: {e}")
-        return False
-
+# ─── EMAIL via RESEND ──────────────────────────────────
 def send_email(data: dict) -> bool:
     try:
-        subject = f"DermaScan Contact — {data['name']}"
-        body = f"""
+        import resend
+        resend.api_key = os.environ.get("RESEND_API_KEY", "")
+        if not resend.api_key:
+            log.warning("No RESEND_API_KEY set — skipping email.")
+            return False
+
+        params = {
+            "from": "DermaScan <onboarding@resend.dev>",
+            "to": RECIPIENT_EMAILS,
+            "reply_to": data["email"],
+            "subject": f"DermaScan Contact — {data['name']}",
+            "text": f"""
 New contact form submission on DermaScan
 ─────────────────────────────────────────
 Name    : {data['name']}
@@ -277,26 +267,13 @@ Time    : {data['timestamp']}
 Message :
 
 {data['message']}
-
-─────────────────────────────────────────
-Reply directly to: {data['email']}
-        """.strip()
-
-        msg = MIMEMultipart()
-        msg['From']     = SENDER_EMAIL
-        msg['To']       = ', '.join(RECIPIENT_EMAILS)
-        msg['Subject']  = subject
-        msg['Reply-To'] = data['email']
-        msg.attach(MIMEText(body, 'plain'))
-
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.sendmail(SENDER_EMAIL, RECIPIENT_EMAILS, msg.as_string())
-
-        log.info(f"Email sent to {RECIPIENT_EMAILS}")
+            """.strip()
+        }
+        resend.Emails.send(params)
+        log.info(f"✅ Email sent via Resend to {RECIPIENT_EMAILS}")
         return True
     except Exception as e:
-        log.error(f"Failed to send email: {e}")
+        log.error(f"Resend email failed: {e}")
         return False
 
 # ─── ROUTES ────────────────────────────────────────────
@@ -392,12 +369,7 @@ def contact():
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         }
 
-        # ── Save message first — this MUST succeed ──
-        saved = save_message(data)
-        if not saved:
-            return jsonify({'error': 'Failed to process your message. Please try again.'}), 500
-
-        # ── Try email with threading timeout (Railway-safe) ──
+        # Send email via Resend in background thread
         emailed = False
         try:
             result = [False]
@@ -408,32 +380,19 @@ def contact():
             email_thread = threading.Thread(target=run_email)
             email_thread.daemon = True
             email_thread.start()
-            email_thread.join(timeout=8)
+            email_thread.join(timeout=10)
             emailed = result[0]
         except Exception as e:
-            log.warning(f"Email skipped: {e}")
-            emailed = False
+            log.warning(f"Email thread error: {e}")
 
         return jsonify({
             'success': True,
-            'saved':   saved,
             'emailed': emailed,
             'message': "Your message has been received! We'll get back to you soon.",
         }), 200
 
     except Exception as e:
         log.error(f"Contact error: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/messages', methods=['GET'])
-def get_messages():
-    try:
-        if not os.path.exists(MESSAGES_FILE):
-            return jsonify({'messages': [], 'count': 0}), 200
-        with open(MESSAGES_FILE, 'r', encoding='utf-8') as f:
-            messages = json.load(f)
-        return jsonify({'messages': messages, 'count': len(messages)}), 200
-    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.errorhandler(413)
