@@ -9,7 +9,14 @@ os.makedirs(MODEL_DIR, exist_ok=True)
 
 if not os.path.exists(MODEL_PATH):
     print("Downloading model from Google Drive...")
-    gdown.download(f"https://drive.google.com/uc?id={FILE_ID}", MODEL_PATH, quiet=False)
-    print("✅ Model downloaded!")
+    gdown.download(
+        f"https://drive.google.com/uc?id={FILE_ID}&confirm=t",
+        MODEL_PATH,
+        quiet=False,
+        fuzzy=True
+    )
+    size_mb = os.path.getsize(MODEL_PATH) / (1024 * 1024)
+    print(f"✅ Model downloaded! Size: {size_mb:.1f} MB")
 else:
-    print("✅ Model already exists, skipping download.")
+    size_mb = os.path.getsize(MODEL_PATH) / (1024 * 1024)
+    print(f"✅ Model already exists. Size: {size_mb:.1f} MB")
